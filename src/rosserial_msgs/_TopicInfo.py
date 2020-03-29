@@ -81,7 +81,7 @@ int32 buffer_size
 			self.md5sum = str[start:end].decode('utf-8')
 			start = end
 			end += 4
-			(self.buffer_size,) = _get_struct_i().unpack(str[start:end])
+			(self.buffer_size,) = struct.unpack('<i',str[start:end])
 			return self
 		except Exception as e:
 			print(e)

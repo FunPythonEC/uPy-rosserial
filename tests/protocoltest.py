@@ -1,3 +1,9 @@
+"""
+This is a script to prove
+rosserial topic negotiation
+and publish
+"""
+
 import machine as m
 import uio
 import struct
@@ -78,5 +84,3 @@ while True:
         uart.write(bytearray(checksumpackdata))
         print('enviado hola')
         sleep(1)      
-
-        
