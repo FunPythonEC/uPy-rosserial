@@ -13,6 +13,10 @@ Since there is no rosserial package for uPy as there is for Arduino, this repo h
 **To Do: Subscribing testing and implementation.**
 
 ## Installation
+Before using this library you must have ROS installed, as well as rosserial which would be with the following command:
+`sudo apt install ros-<version>-rosserial`
+
+
 In theory every board with the kind of generic `UART` class for ESP32 is capable of using this library, but it must be known exactly which `UART ID` is being used, this means for example, for ESP32 defined pins correspond to TX0 and RX0 for UART0, and so on. In the examples below, UART2 is used.
 
 In order to use ros node communication, have in mind a python class for each message must be available. this means a dependency of this library is [uPy Genpy](https://github.com/FunPythonEC/uPy-genpy), used to create Python classes for messages from `*.msg` files. Follow the installation from `ugenpy` before proceeding.
@@ -23,6 +27,12 @@ Once `ugenpy` is inside, the packages `uros` and `rosserial_msgs` from `src` fol
 **Have in mind before publishing or subscribing to a topic, the message class must be generated with `ugenpy`**
 
 ## Usage
+
+Everytime before establishing rosserial communication, this command must be run:
+>rosrun rosserial_arduino serial_node.py _port:=/dev/ttyUSB0 _baud:=115200
+
+Note port and baudrate can be changed, in ESP32 I prefer using 115200 for baudrate.
+
 ### Publish example
 
 Suppose `ColorRGBA.py` has been created using `ugenpy` and `ColorRGBA.msg` file:
