@@ -55,7 +55,7 @@ int32 buffer_size
 		except Exception as e:
 			print(e)
 
-	def deserialize(self, str)
+	def deserialize(self, str):
 		try:
 			end=0
 			start=end
