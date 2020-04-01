@@ -1,14 +1,24 @@
-#libraries needed
-#	machine: for uart usage
-#	uio: packet buffer
-#	struct: serlization
-#	_TopicInfo: for topic negotiation
+"""
+libraries needed
+	machine: for uart usage
+	uio: packet buffer
+	struct: serlization
+	_TopicInfo: for topic negotiation
+   already provided in rosserial_msgs
+"""
 
 import machine as m
 import uio
 import ustruct as struct
 from time import sleep, sleep_ms, sleep_us
 from rosserial_msgs._TopicInfo import TopicInfo
+from sys import platform as platform
+
+#for now threads are used, will be changed with asyncio in the future
+if platform == "esp32":
+    import _thread as threading
+else :
+    import threading
 
 #rosserial protocol header
 header=[0xff,0xfe]
@@ -20,25 +30,33 @@ class NodeHandle(object):
 		
 		"""
 		id: used for topics id (negotiation)
-		advertised_topics: manage alreade negotiated topics
+		advertised_topics: manage already negotiated topics
+		subscribing_topics: topics to which will be subscribed are here
 		serial_id: uart id
 		baudrate: baudrate used for serial comm
 		"""
-		self.id=1
+		self.id=101
 		self.advertised_topics=dict()
+		self.subscribing_topics=dict()
 		self.serial_id=serial_id
 		self.baudrate=baudrate
 		self.uart = m.UART(self.serial_id, self.baudrate)
 		self.uart.init(self.baudrate, bits=8, parity=None, stop=1, txbuf=0)
 
+		if platform == "esp32":
+			threading.start_new_thread(self._listen, ())
+		else:
+			threading.Thread(target = self._listen).start()
+
 
 	#method to manage and advertise topic
 	#before publishing or subscribing
-	def _advertise_topic(self,topic_name, msg):
+	def _advertise_topic(self,topic_name, msg, buffer_size=50, endpoint):
 
 		"""
-		topic_name: eg. (/std_msgs/Greet)
+		topic_name: eg. (Greet)
 		msg: message object
+		endpoint: corresponds to TopicInfo.msg typical topic id values
 		"""
 		register=TopicInfo()
 		register.topic_id=self.id
@@ -52,9 +70,11 @@ class NodeHandle(object):
 		self.id+=1
 
 		try:
-			register.buffer_size=msg.buffer_size
+			register.buffer_size=buffer_size
 		except Exception as e:
-			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			print(exc_type, fname, exc_tb.tb_lineno)
 
 		#serialization
 		packet=uio.StringIO()
@@ -66,17 +86,17 @@ class NodeHandle(object):
 
 		#both checksums
 		crclen=[checksum(le(length))]
-		crcpack=[checksum([0,0]+packet)]
+		crcpack=[checksum(le(endpoint)+packet)]
 
 		#final packet to be sent
-		fpacket=header+le(length)+crclen+[0,0]+packet+crcpack
+		fpacket=header+le(length)+crclen+le(endpoint)+packet+crcpack
 		self.uart.write(bytearray(fpacket))
 
 
 	def publish(self,topic_name,msg):
 
 		if topic_name not in self.advertised_topics:
-			self._advertise_topic(topic_name, msg)
+			self._advertise_topic(topic_name, msg, endpoint = 0)
 
 		#same as advertise
 		packet=uio.StringIO()
@@ -92,8 +112,66 @@ class NodeHandle(object):
 		fpacket=header+le(length)+crclen+topic_id+packet+crcpack
 		self.uart.write(bytearray(fpacket))
 
-	def subscribe(self):
-		pass
+	def subscribe(self, topic_name, msgobj, cb):
+		assert cb is not None, "Subscribe callback is not set"
+	
+		#subscribing topic attributes are added
+		self.subscribing_topics[self.id]=[msgobj,cb]
+
+		#advertised if not already subscribed
+		if topic_name not in self.advertised_topics:
+			msg = msgobj()
+			self._advertise_topic(topic_name, msg, endpoint = 1)
+
+	def _listen(self):
+		while True:
+			try:
+				flag=self.uart.read(2)
+				#check header
+				if flag == b'\xff\xfe':
+					#get bytes length
+					lengthbyte = self.uart.read(2)
+					length = word(list(lengthbyte)[0], list(lengthbyte)[1])
+					lenchk = self.uart.read(1)
+
+					#validate length checksum
+					lenchecksum = sum(list(lengthbyte)) + ord(lenchk)
+					if lenchecksum % 256 != 255:
+						raise ValueError('Length checksum is not right!')
+
+					topic_id=list(self.uart.read(2))
+					inid = word(topic_id[0],topic_id[1])
+					if inid != 0:
+						msgdata = self.uart.read(length)
+						chk = self.uart.read(1)
+
+						#validate topic plus msg checksum
+						datachecksum = sum((topic_id)) + sum(list(msgdata)) + ord(chk)
+						if datachecksum % 256 == 255:
+							try:
+								#incoming object msg initialized
+								msgobj = self.subscribing_topics.get(inid)[0]
+							except Exception :
+								print('A subscribe packet is being sent from rosserial but not actually subscribed from microcontroller.')
+							#object sent to callback
+							callback = self.subscribing_topics.get(inid)[1]
+							fdata = msgobj()
+							fdata = fdata.deserialize(msgdata)
+							callback(fdata)
+						else:
+							raise ValueError('Message plus Topic ID Checksum is wrong')
+
+			except Exception as e:
+				exc_type, exc_obj, exc_tb = sys.exc_info()
+				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+				print(exc_type, fname, exc_tb.tb_lineno)
+
+#functions to be used in class
+def word(l, h):
+	"""
+	Given a low and high bit, converts the number back into a word.
+	"""
+	return (h << 8) + l		
 
 #checksum method, receives array
 def checksum(arr):

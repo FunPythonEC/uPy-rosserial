@@ -6,7 +6,7 @@ Since there is no rosserial package for uPy as there is for Arduino, this repo h
 ## Features
 - [x] Advertising Topics
 - [x] Publishing
-- [ ] Subscribing
+- [x] Subscribing
 - [ ] Actions
 - [ ] Services
 
@@ -28,10 +28,10 @@ Once `ugenpy` is inside, the packages `uros` and `rosserial_msgs` from `src` fol
 
 ## Usage
 
-Everytime before establishing rosserial communication, this command must be run:
+Everytime before establishing rosserial communication, this command must be run, even before running the script in uPy, will be improved afterwards:
 >rosrun rosserial_arduino serial_node.py _port:=/dev/ttyUSB0 _baud:=115200
 
-Note port and baudrate can be changed, in ESP32 I prefer using 115200 for baudrate.
+**Note port and baudrate can be changed, in ESP32 I prefer using 115200 for baudrate.**
 
 ### Publish example
 
@@ -58,4 +58,34 @@ msg.a=1
 while True:
     node.publish('Colorsh',msg) #publish data to node Colorsh
     sleep(1)
+```
+
+### Subscribe example
+
+```python
+import uros
+from std_msgs._String import String
+
+def cb(msg):
+	print(msg.data)
+	
+node = uros.NodeHandle(2, 115200)
+node.subscribe('chatter', String, cb)
+```
+
+### Mixed example
+
+```python
+import uros
+from std_msgs._String import String
+
+def cb(msg):
+	print(msg.data)
+	
+packet=String()
+packet.data='hola fpy'
+node = uros.NodeHandle(2, 115200)
+node.subscribe('chatter', String, cb)
+while True:
+	node.publish('greet', packet)
 ```
