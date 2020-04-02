@@ -11,13 +11,13 @@ import machine as m
 import uio
 import ustruct as struct
 from time import sleep, sleep_ms, sleep_us
-from rosserial_msgs._TopicInfo import TopicInfo
-from sys import platform as platform
-
+from rosserial_msgs import TopicInfo
+import sys
+import os
 #for now threads are used, will be changed with asyncio in the future
-if platform == "esp32":
+if sys.platform == "esp32":
     import _thread as threading
-else :
+else:
     import threading
 
 #rosserial protocol header
@@ -43,7 +43,7 @@ class NodeHandle(object):
 		self.uart = m.UART(self.serial_id, self.baudrate)
 		self.uart.init(self.baudrate, bits=8, parity=None, stop=1, txbuf=0)
 
-		if platform == "esp32":
+		if sys.platform == "esp32":
 			threading.start_new_thread(self._listen, ())
 		else:
 			threading.Thread(target = self._listen).start()
@@ -51,7 +51,7 @@ class NodeHandle(object):
 
 	#method to manage and advertise topic
 	#before publishing or subscribing
-	def _advertise_topic(self,topic_name, msg, buffer_size=50, endpoint):
+	def _advertise_topic(self, topic_name, msg, endpoint, buffer_size):
 
 		"""
 		topic_name: eg. (Greet)
@@ -72,9 +72,7 @@ class NodeHandle(object):
 		try:
 			register.buffer_size=buffer_size
 		except Exception as e:
-			exc_type, exc_obj, exc_tb = sys.exc_info()
-			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-			print(exc_type, fname, exc_tb.tb_lineno)
+			print('No buffer size could be defined for topic negotiation.')
 
 		#serialization
 		packet=uio.StringIO()
@@ -93,10 +91,10 @@ class NodeHandle(object):
 		self.uart.write(bytearray(fpacket))
 
 
-	def publish(self,topic_name,msg):
+	def publish(self, topic_name, msg, buffer_size=1024):
 
 		if topic_name not in self.advertised_topics:
-			self._advertise_topic(topic_name, msg, endpoint = 0)
+			self._advertise_topic(topic_name, msg, 0, buffer_size)
 
 		#same as advertise
 		packet=uio.StringIO()
@@ -112,7 +110,7 @@ class NodeHandle(object):
 		fpacket=header+le(length)+crclen+topic_id+packet+crcpack
 		self.uart.write(bytearray(fpacket))
 
-	def subscribe(self, topic_name, msgobj, cb):
+	def subscribe(self, topic_name, msgobj, cb, buffer_size=1024):
 		assert cb is not None, "Subscribe callback is not set"
 	
 		#subscribing topic attributes are added
@@ -121,7 +119,7 @@ class NodeHandle(object):
 		#advertised if not already subscribed
 		if topic_name not in self.advertised_topics:
 			msg = msgobj()
-			self._advertise_topic(topic_name, msg, endpoint = 1)
+			self._advertise_topic(topic_name, msg, 1, buffer_size)
 
 	def _listen(self):
 		while True:
@@ -152,19 +150,17 @@ class NodeHandle(object):
 								#incoming object msg initialized
 								msgobj = self.subscribing_topics.get(inid)[0]
 							except Exception :
-								print('A subscribe packet is being sent from rosserial but not actually subscribed from microcontroller.')
+								print('TX request was made or got message from not available subscribed topic.')
 							#object sent to callback
 							callback = self.subscribing_topics.get(inid)[1]
 							fdata = msgobj()
 							fdata = fdata.deserialize(msgdata)
 							callback(fdata)
 						else:
-							raise ValueError('Message plus Topic ID Checksum is wrong')
+							raise ValueError('Message plus Topic ID Checksum is wrong!')
 
 			except Exception as e:
-				exc_type, exc_obj, exc_tb = sys.exc_info()
-				fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-				print(exc_type, fname, exc_tb.tb_lineno)
+				print('No incoming data could be read for subscribes.')
 
 #functions to be used in class
 def word(l, h):
@@ -180,3 +176,13 @@ def checksum(arr):
 def le(h):
     h &= 0xffff
     return [h & 0xff, h >> 8]
+
+#example code
+if __name__ == "__main__":
+	from std_msgs import String
+	from uros import NodeHandle
+	msg=String()
+	msg.data= 'HiItsMeMario'
+	node=NodeHandle(2,115200)
+	while True:
+		node.publish('greet',msg)

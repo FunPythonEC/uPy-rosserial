@@ -1,5 +1,5 @@
 import uros
-from std_msgs._ColorRGBA import ColorRGBA #message object ColorRGBA
+from std_msgs import ColorRGBA #message object ColorRGBA
 from time import sleep
 node=uros.NodeHandle(2,115200) #node initialized, for tx2/rx2 and 115200 baudrate
 msg=ColorRGBA() #msg object init
