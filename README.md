@@ -47,7 +47,7 @@ And then running the following e.g.:
 
 ``` python
 import uros
-from std_msgs._ColorRGBA import ColorRGBA #message object ColorRGBA
+from std_msgs import ColorRGBA #message object ColorRGBA
 from time import sleep
 node=uros.NodeHandle(2,115200) #node initialized, for tx2/rx2 and 115200 baudrate
 msg=ColorRGBA() #msg object init
@@ -64,7 +64,7 @@ while True:
 
 ```python
 import uros
-from std_msgs._String import String
+from std_msgs import String
 
 def cb(msg):
 	print(msg.data)
@@ -77,7 +77,7 @@ node.subscribe('chatter', String, cb)
 
 ```python
 import uros
-from std_msgs._String import String
+from std_msgs import String
 
 def cb(msg):
 	print(msg.data)
