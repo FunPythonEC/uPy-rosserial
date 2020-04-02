@@ -19,16 +19,23 @@ Before using this library you must have ROS installed, as well as rosserial whic
 
 In theory every board with the kind of generic `UART` class for ESP32 is capable of using this library, but it must be known exactly which `UART ID` is being used, this means for example, for ESP32 defined pins correspond to TX0 and RX0 for UART0, and so on. In the examples below, UART2 is used.
 
-In order to use ros node communication, have in mind a python class for each message must be available. this means a dependency of this library is [uPy Genpy](https://github.com/FunPythonEC/uPy-genpy), used to create Python classes for messages from `*.msg` files. Follow the installation from `ugenpy` before proceeding.
+In order to use ros node communication, have in mind a python class for each message must be available. this means a dependency of this library is [uPy Genpy](https://github.com/FunPythonEC/uPy-genpy) and [uPy rosserial_msgs](https://github.com/FunPythonEC/uPy-rosserial_msgs), `ugenpy` used to create Python classes for messages from `*.msg` files while `rosserial_msgs` has the `TopicInfo` class for topic negotiation. Follow the installation from `ugenpy` before proceeding.
 
-Once `ugenpy` is inside, the packages `uros` and `rosserial_msgs` from `src` folder from this repository must be copied to the flash memory. I strongly recommend using [rshell](https://github.com/dhylands/rshell).
->Note: Soon this will be available to be installed with upip.
+Once `ugenpy` and `rosserial_msgs` are inside, the package `uros` from this repository must be copied to the flash memory. I strongly recommend using [rshell](https://github.com/dhylands/rshell).
+
+Now available with upip, could be installed with:
+``` python
+import upip
+upip.install('micropython-rosserial')
+```
+>Note: must be connected to WiFi to use upip like this.
 
 **Have in mind before publishing or subscribing to a topic, the message class must be generated with `ugenpy`**
 
 ## Usage
 
 Everytime before establishing rosserial communication, this command must be run, even before running the script in uPy, will be improved afterwards:
+
 >rosrun rosserial_arduino serial_node.py _port:=/dev/ttyUSB0 _baud:=115200
 
 **Note port and baudrate can be changed, in ESP32 I prefer using 115200 for baudrate.**
