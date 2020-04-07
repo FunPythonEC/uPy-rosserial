@@ -28,9 +28,15 @@ I strongly recommend using [rshell](https://github.com/dhylands/rshell).
 Now available with upip, could be installed with:
 ``` python
 import upip
+import network
+from time import sleep
+wlan=network.WLAN(network.STA_IF)
+wlan.active(True)
+wlan.connect('<ssid>', '<password>')
+sleep(5)
 upip.install('micropython-rosserial')
 ```
-If `micropython-rosserial` is installed, because of requirementes, `ugenpy` and `TopicInfo` will too.
+If `micropython-rosserial` is installed, because of requirements, `ugenpy` and `TopicInfo` will too.
 >Note: must be connected to WiFi to use upip like this.
 
 **Have in mind before publishing or subscribing to a topic, the message class must be generated with `ugenpy`**
