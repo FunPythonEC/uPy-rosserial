@@ -1,7 +1,7 @@
 # uPy-rosserial
-`rosserial` a method used by ROS in order to establish communication via serial , mostly this is used with microcontrollers, which in this case are the ones responsible in some ROS applications for actuators and sensors usage.
+`rosserial` is a method used by ROS in order to establish communication via serial, basically a middleware, mostly used with microcontrollers, which in this case are the ones responsible in some ROS applications for actuators and sensors usage.
 
-Since there is no rosserial package for uPy as there is for Arduino, this repo has been created where every needed script to establish rosserial with uPy will be found.
+This library targets the communication between ROS and uPy with rosserial as middleware.
 
 ## Features
 - [x] Advertising Topics
@@ -9,24 +9,28 @@ Since there is no rosserial package for uPy as there is for Arduino, this repo h
 - [x] Subscribing
 - [ ] Services
 
-**To Do: Subscribing testing and implementation.**
+**To Do: Implement services usage.**
 
 ## Installation
 Before using this library you must have ROS installed, as well as rosserial which would be with the following command:
-`sudo apt install ros-<version>-rosserial`
 
+`sudo apt install ros-<version>-rosserial`
 
 In theory every board with the kind of generic `UART` class for ESP32 is capable of using this library, but it must be known exactly which `UART ID` is being used, this means for example, for ESP32 defined pins correspond to TX0 and RX0 for UART0, and so on. In the examples below, UART2 is used.
 
-In order to use ros node communication, have in mind a python class for each message must be available. this means a dependency of this library is [uPy Genpy](https://github.com/FunPythonEC/uPy-genpy) and [uPy rosserial_msgs](https://github.com/FunPythonEC/uPy-rosserial_msgs), `ugenpy` used to create Python classes for messages from `*.msg` files while `rosserial_msgs` has the `TopicInfo` class for topic negotiation. Follow the installation from `ugenpy` before proceeding.
 
-Once `ugenpy` and `rosserial_msgs` are inside, the package `uros` from this repository must be copied to the flash memory. I strongly recommend using [rshell](https://github.com/dhylands/rshell).
+### Copying source files
+In order to use ros node communication, have in mind a python class for each message must be available. this means a dependency of this library is [uPy Genpy](https://github.com/FunPythonEC/uPy-genpy) and [uPy rosserial_msgs](https://github.com/FunPythonEC/uPy-rosserial_msgs), `ugenpy` used to create Python classes for messages from `*.msg` files while `rosserial_msgs` has the `TopicInfo` class for topic negotiation. The folders from `src`  from this current repo and the other two must be copied
 
+I strongly recommend using [rshell](https://github.com/dhylands/rshell).
+
+### Using upip
 Now available with upip, could be installed with:
 ``` python
 import upip
 upip.install('micropython-rosserial')
 ```
+If `micropython-rosserial` is installed, because of requirementes, `ugenpy` and `TopicInfo` will too.
 >Note: must be connected to WiFi to use upip like this.
 
 **Have in mind before publishing or subscribing to a topic, the message class must be generated with `ugenpy`**
@@ -95,3 +99,25 @@ node.subscribe('chatter', String, cb)
 while True:
 	node.publish('greet', packet)
 ```
+
+## Classes
+### `uros.NodeHandle`
+#### Constructor
+##### `uros.NodeHandle(serial_id, baudrate)`
+Initiates the class which handles the node, advertised topics, publishes and subscribe.
+* `serial_id`: corresponds to the UART ID, in case of ESP32, it has 3 UARTS, in the examples UART2 is used.
+* `baudrate`: is the baudrate in which the board will communicate.
+
+#### Methods
+##### `uros.NodeHandle.publish(topic_name, msg, buffer_size=1024)`
+Publishes data to a defined topic, with a defined message class.
+* `topic_name`: the topic where the message will be put or published.
+* `msg`: the msg class initiated with its slots values defined.
+* `buffer_size`: the amount of bytes that will be published as a maximum from this particular topic, 1024 is by default.
+
+##### `uros.NodeHandle.subscribe(topic_name, msgobj, cb, buffer_size=1024)`
+Subscribe to a defined topic.
+* `topic_name`: same as publish.
+* `msgobj`: is the object class, but not instantiated, just the class passed.
+* `cb`: must be defined, it is a callback function, with a single argument that corresponds to the inconming message class.
+* `buffer_size`: same as publish.
