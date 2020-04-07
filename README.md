@@ -7,7 +7,6 @@ Since there is no rosserial package for uPy as there is for Arduino, this repo h
 - [x] Advertising Topics
 - [x] Publishing
 - [x] Subscribing
-- [ ] Actions
 - [ ] Services
 
 **To Do: Subscribing testing and implementation.**
