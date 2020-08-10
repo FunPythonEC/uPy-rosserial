@@ -27,7 +27,7 @@ header = [0xFF, 0xFE]
 # class to manage publish and subscribe
 # COULD BE CHANGED AFTERWARDS
 class NodeHandle(object):
-    def __init__(self, serial_id, baudrate):
+    def __init__(self, serial_id=2, baudrate=115200, **kwargs):
 
         """
 		id: used for topics id (negotiation)
@@ -41,8 +41,23 @@ class NodeHandle(object):
         self.subscribing_topics = dict()
         self.serial_id = serial_id
         self.baudrate = baudrate
-        self.uart = m.UART(self.serial_id, self.baudrate)
-        self.uart.init(self.baudrate, bits=8, parity=None, stop=1, txbuf=0)
+
+        if "serial" in kwargs:
+            self.uart = kwargs.get("serial")
+        elif "tx" in kwargs and "rx" in kwargs:
+            self.uart = m.UART(self.serial_id, self.baudrate)
+            self.uart.init(
+                self.baudrate,
+                tx=kwargs.get("tx"),
+                rx=kwargs.get("rx"),
+                bits=8,
+                parity=None,
+                stop=1,
+                txbuf=0,
+            )
+        else:
+            self.uart = m.UART(self.serial_id, self.baudrate)
+            self.uart.init(self.baudrate, bits=8, parity=None, stop=1, txbuf=0)
 
         if sys.platform == "esp32":
             threading.start_new_thread(self._listen, ())
