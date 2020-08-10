@@ -3,6 +3,8 @@
 
 This library targets the communication between ROS and uPy with rosserial as middleware.
 
+**Note: All of this library was coded using an ESP32, can't guarantee to work with other boards.**
+
 ## Features
 - [x] Advertising Topics
 - [x] Publishing
