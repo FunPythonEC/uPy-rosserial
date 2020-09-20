@@ -16,7 +16,7 @@ This library targets the communication between ROS and uPy with rosserial as mid
 ## Installation
 Before using this library you must have ROS installed, as well as rosserial which would be with the following command:
 
-`sudo apt install ros-<version>-rosserial`
+`sudo apt install ros-<version>-rosserial ros-<version>-rosserial-arduino`
 
 In theory every board with the kind of generic `UART` class for ESP32 is capable of using this library, but it must be known exactly which `UART ID` is being used, this means for example, for ESP32 defined pins correspond to TX0 and RX0 for UART0, and so on. In the examples below, UART2 is used.
 
@@ -105,10 +105,11 @@ while True:
 ## Classes
 ### `uros.NodeHandle`
 #### Constructor
-##### `uros.NodeHandle(serial_id, baudrate)`
+##### `uros.NodeHandle(serial_id = 2, baudrate = 115200, **kwargs)`
 Initiates the class which handles the node, advertised topics, publishes and subscribe.
 * `serial_id`: corresponds to the UART ID, in case of ESP32, it has 3 UARTS, in the examples UART2 is used.
 * `baudrate`: is the baudrate in which the board will communicate.
+* `**kwargs`: used in order to be able to define the serial communication with uart in different ways, in case a custom UART object is wanted to be used, it should be defined as `uros.NodeHandle(serial = uart_object)` or in case certain `tx` and `rx` pins are wanted for the uart with certain ID, it should be like `node = uros.NodeHandle(2, 115200, tx=16, rx= 16)`.
 
 #### Methods
 ##### `uros.NodeHandle.publish(topic_name, msg, buffer_size=1024)`
