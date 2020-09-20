@@ -14,6 +14,7 @@ from time import sleep, sleep_ms, sleep_us
 from rosserial_msgs import TopicInfo
 import sys
 import os
+import logging
 
 # for now threads are used, will be changed with asyncio in the future
 if sys.platform == "esp32":
@@ -23,6 +24,8 @@ else:
 
 # rosserial protocol header
 header = [0xFF, 0xFE]
+
+logging.basicConfig(level=logging.INFO)
 
 # class to manage publish and subscribe
 # COULD BE CHANGED AFTERWARDS
@@ -87,7 +90,7 @@ class NodeHandle(object):
         try:
             register.buffer_size = buffer_size
         except Exception as e:
-            print("No buffer size could be defined for topic negotiation.")
+            logging.info("No buffer size could be defined for topic negotiation.")
 
         # serialization
         packet = uio.StringIO()
@@ -164,9 +167,7 @@ class NodeHandle(object):
                                 # incoming object msg initialized
                                 msgobj = self.subscribing_topics.get(inid)[0]
                             except Exception:
-                                print(
-                                    "TX request was made or got message from not available subscribed topic."
-                                )
+                                logging.info("TX request was made or got message from not available subscribed topic.")
                             # object sent to callback
                             callback = self.subscribing_topics.get(inid)[1]
                             fdata = msgobj()
@@ -176,7 +177,7 @@ class NodeHandle(object):
                             raise ValueError("Message plus Topic ID Checksum is wrong!")
 
             except Exception as e:
-                print("No incoming data could be read for subscribes.")
+                logging.info("No incoming data could be read for subscribes.")
 
 
 # functions to be used in class
