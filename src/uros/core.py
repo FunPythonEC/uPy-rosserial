@@ -97,7 +97,7 @@ class NodeHandle:
         self.uart.write(bytearray(fpacket))
 
     def _advertise_all_topics(self):
-        for key, value in self.advertised_topics:
+        for key, value in self.advertised_topics.items():
             self._advertise_topic(key, value[0], value[1], value[2], value[3])
 
     def publish(self, topic_name, msg, buffer_size=1024):
